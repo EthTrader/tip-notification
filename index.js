@@ -104,5 +104,10 @@ async function reply(content, {from, amount, transactionHash, token}){
   let txUrl = `${process.env.BLOCK_EXPLORER_TX_PATH}${transactionHash}`
   let message = `${from} [tipped](${txUrl}) you ${formatUnits(amount, decimals).toString()} ${symbol}!`
   console.log(content, message)
+  try {
+    await content.reply(message)
+  } catch(e){
+    console.log(e)
+  }
   return
 }
