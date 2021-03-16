@@ -5,8 +5,9 @@ const { formatUnits, Fragment, Interface, parseBytes32String } = utils
 const snoowrap = require('snoowrap')
 const Promise = require('bluebird')
 const low = require('lowdb')
-const { Pool } = require('pg')
-const pool = new Pool({connectionString: process.env.DB_URL})
+// const { Pool } = require('pg')
+// const pool = new Pool({connectionString: process.env.DB_URL})
+const users = require('./users.json')
 const FileAsync = require('lowdb/adapters/FileAsync')
 const TippingABI = require('./abis/Tipping.json')
 const ERC20ABI = require('./abis/ERC20.json')
@@ -87,22 +88,13 @@ async function reply(content, {from, amount, transactionHash, token}){
   const symbol = await tokenContract.methods.symbol().call()
   const decimals = await tokenContract.methods.decimals().call()
 
-  const client = await pool.connect()
-  const query = {
-    // give the query a unique name
-    name: 'fetch-user-by-address',
-    text: 'SELECT * FROM users WHERE address ILIKE $1',
-    values: [from],
-  }
-  let res = await client.query(query)
-  client.release()
-  // console.log(res)
-  if(res.rows.length)
-    from = `u/${res.rows[0].username}`
-  else
-    from = `${from.slice(0,8)}...`
+  let sender = `${from.slice(0,8)}...`
+  let user = users.find(u=>u.address.toLowerCase()===from.toLowerCase())
+  if(user)
+    sender = `u/${user.username}`
+
   let txUrl = `${process.env.BLOCK_EXPLORER_TX_PATH}${transactionHash}`
-  let message = `${from} [tipped](${txUrl}) you ${formatUnits(amount, decimals).toString()} ${symbol}!`
+  let message = `${sender} [tipped](${txUrl}) you ${formatUnits(amount, decimals).toString()} ${symbol}!`
   console.log(content, message)
   try {
     await content.reply(message)
