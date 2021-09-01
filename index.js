@@ -5,10 +5,12 @@ const { formatUnits, Fragment, Interface, parseBytes32String } = utils
 const snoowrap = require('snoowrap')
 const Promise = require('bluebird')
 const low = require('lowdb')
-const users = require('./users.json')
+const fetch = require("node-fetch")
 const FileAsync = require('lowdb/adapters/FileAsync')
 const TippingABI = require('./abis/Tipping.json')
 const ERC20ABI = require('./abis/ERC20.json')
+
+let users
 
 const adapter = new FileAsync('db.json')
 const r = new snoowrap({
@@ -39,6 +41,7 @@ let tips
 main()
 
 async function main(){
+  users = await fetch("https://ethtrader.github.io/donut.distribution/users.json").then(res=>res.json())
   const db = await low(adapter)
   tips = db.defaults({ tips: [] }).get('tips')
   let startBlock = process.env.START_BLOCK
