@@ -42,7 +42,7 @@ main()
 
 async function main(){
   users = await fetch("https://ethtrader.github.io/donut.distribution/users.json").then(res=>res.json())
-  db = (await low(adapter)).defaults({ tips: [], block: process.env.START_BLOCK })
+  db = (await low(adapter)).defaults({ tips: [] })
   tips = db.get('tips')
   block = db.get('block')
   if(!block)
