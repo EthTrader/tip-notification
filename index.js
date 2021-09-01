@@ -37,18 +37,18 @@ let redditTipV1Frag = Fragment.from({
 })
 let ifaceV1 = new Interface([redditTipV1Frag])
 
-let tips
+let db, tips, block
 main()
 
 async function main(){
   users = await fetch("https://ethtrader.github.io/donut.distribution/users.json").then(res=>res.json())
-  const db = await low(adapter)
-  tips = db.defaults({ tips: [] }).get('tips')
-  let startBlock = process.env.START_BLOCK
-  if(!startBlock)
-    startBlock = await tipping.methods.getInitializationBlock().call()
-  console.log("startBlock:", startBlock)
-  let events = await eventsAfter(startBlock)
+  db = (await low(adapter)).defaults({ tips: [], block: process.env.START_BLOCK })
+  tips = db.get('tips')
+  block = db.get('block')
+  if(!block)
+    block = await tipping.methods.getInitializationBlock().call()
+  console.log("startBlock:", block)
+  let events = await eventsAfter(block)
   let newEvents = events.filter(unprocessed)
   await Promise.all(newEvents.map(notify))
   tipping.events.Tip({fromBlock:'latest'})
@@ -64,7 +64,7 @@ function unprocessed({transactionHash}){
   return !tip
 }
 
-async function notify({transactionHash, returnValues}){
+async function notify({blockNumber, transactionHash, returnValues}){
   const {from, to, amount, token, contentId} = returnValues
 
   const parsedContentId = parseBytes32String(contentId)
@@ -82,6 +82,7 @@ async function notify({transactionHash, returnValues}){
       break
   }
   await tips.push({transactionHash}).write()
+  await db.set("block", blockNumber).write()
 }
 
 async function reply(content, {from, amount, transactionHash, token}){
